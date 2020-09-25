@@ -223,7 +223,7 @@ Observations: For import scripts to work, user executing the script must have ac
 
 Atlas Hooks as name implies are hooks which are embedded into the service JVM with configurable option. If enabled on a service, this hook code is triggered when there is any change to metadata or any metadata is created/deleted. Atlas Hooks relies on kafka notification system to achieve this. Below is the flow for a typical Atlas Hook.
 
-[image:9D01A845-9AEC-481A-8A38-A550B981E59F-62422-0000D93B17818C0D/image_2.png]
+![Atlas Hook message Flow](Atlas_hook_Kafka.png)
 
 *Step 1:* From CM UI, enable Atlas hook on hive_on_tez service(by selecting Atlas service is configuration), restart the services and verify configurations from HiveServer2: 
 *Step 2:* Login to HiveServer2 to review the configurations for hook to work . 
