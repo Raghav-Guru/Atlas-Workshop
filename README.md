@@ -12,7 +12,7 @@ In this workshop, we will understand the working of Atlas by decoupling each of 
 
 We will discuss and understand all the components in this architecture throughout our workshop while reviewing configuration and troubleshooting in some areas.
 
-[Atlas_Architecture.png]
+![Atlas Architecture](Atlas_Architecture.png)
 
 *SECTION 1 : Understanding Atlas service pre-requisites, configuration and troubleshooting the setup in squadron*
  
