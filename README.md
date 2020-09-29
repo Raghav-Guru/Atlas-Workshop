@@ -123,7 +123,7 @@ Few common issues related to Hbase that can cause Atlas startup/initialization f
 * Hbase table inconsistencies. Hbase Master UI should give the status of regions.
 * Atlas Hbase access issues ( can be related to Ranger Plugin or permission on hbase tables)
 
-**LAB 1.2: Kafka configuration for Atlas, Atlas Hook and bridges:** 
+### **LAB 1.2: Kafka configuration for Atlas, Atlas Hook and bridges:** 
  
 Kafka is used as notification/messaging system for automated way to populate metadata into Atlas. Prior to reviewing how Kafka is used with Atlas, we will start with Atlas Bridges concept, which are helpful to populate existing metadata in the source prior to Atlas installation.
  
@@ -331,7 +331,7 @@ Observations:  Atlas service subscribes to Kafka topic ATLAS_HOOK, for which Kaf
 
 **Task :** Referring to above command, try to see all the notifications published on ATLAS_HOOK topic.
 
-**LAB 1.3 : Atlas Search and Solr configurations :**
+### **LAB 1.3 : Atlas Search and Solr configurations :**
  
 In this LAB we will review the configurations related to Basic search, the feature used by external clients for data discovery.
 Atlas provides two options for search *Basic Search* and *Advanced/DSL search*: Basic search is faster as it gets the search results from Solr collections configured for Atlas. 
@@ -367,7 +367,7 @@ fulltext_index (5)
 **Step 4:** Advanced search or DSL search accepts sql like syntax but is slower as this query is executed against the graph DB on HBase. This feature has limitations like using special characters. 
 From Solr UI select Advanced search and try searching same table “atlas_*” and see the response time :
 
-**LAB 1.4 :Atlas Lineage**
+### **LAB 1.4 :Atlas Lineage**
 In this LAB we will understand the Atlas Lineage feature and how a lineage is built using Atlas Hooks. After completing above steps, we should have fully functional Atlas and should be able to use the core features of Atlas.
 
 **Step 1:**
