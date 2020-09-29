@@ -132,7 +132,8 @@ We will explore other pre-requisite services Solr and Kafka while understanding 
  
  
 **LAB 1.2.1 : Understanding Atlas Hook and Bridges:**
-We have two methods to populate metadata to Atlas.
+
+We have 3 methods to populate metadata to Atlas:
 
 **Atlas Bridge :** Atlas bridge is a simple class built on AtlasClientV2 class, which does a POST method to ATLAS API with the metadata fetched from service (like for hive we fetch metadata from Hive Metastore ).
 With the atlas installation a shell script is provided as add-on per service.
@@ -325,6 +326,8 @@ From the above output we can see CURRENT-OFFSET and LAG, 0 LAG represents that c
 **Step 4.7 :** Login to Atlas UI and verify if the tables that were created are available. From atlas UI "Search by Type”: hive_table and "Search by text” : atlas_* 
 
 Observations:  Atlas service subscribes to Kafka topic ATLAS_HOOK, for which Kafka service should be operational. Hive hook will publish any metadata change events during runtime to Kafka topic ATLAS_HOOK.
+
+* **Atlas API :** We will use this method in second part of Lab with a custom type. 
 
 **Task :** Referring to above command, try to see all the notifications published on ATLAS_HOOK topic.
 
