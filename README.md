@@ -20,6 +20,7 @@ We will discuss and understand all the components in this architecture throughou
 ### *LAB 1.1 : Hbase configurations for Atlas service :**
 
 **Step 1 :**  Once cluster is setup and Kerberize, try accessing Atlas UI and verify if it is up and running after restart. Atlas web UI should give 503 exception. 
+
 **Step 2 :** Review the /var/log/atlas/application.log on atlas logs for further troubleshooting.
 
 ```
@@ -34,12 +35,12 @@ Prior to troubleshooting the issue, lets understand the atlas service pre-requis
 Atlas depends on Hbase/HDFS,Kafka,Solr service. Before starting Atlas service , all these services must be up and running with permissions set on resource to allow Atlas user access.
 
 ---
-**Step 3:**As configuring Atlas is already done by CM, we will review hbase related configs and fix some common issue.
+**Step 3:** As configuring Atlas is already done by CM, we will review hbase related configs and fix some common issue.
 
 Atlas is an application that uses graph database, we use janus graph(titan DB prior to HDP 3.x) database which relies on backend storage like Hbase or Cassandra.
 Ref: [https://docs.janusgraph.org/](https://docs.janusgraph.org/) 
 
-**Step 3.1 :**Review the atlas configuration to verify if all the configured backend services are available and accessible with atlas service principal. 
+**Step 3.1 :** Review the atlas configuration to verify if all the configured backend services are available and accessible with atlas service principal. 
 Login to atlas host and verify the configuration.
 
 ```
@@ -57,7 +58,7 @@ atlas.audit.hbase.tablename=ATLAS_ENTITY_AUDIT_EVENTS
 **Observation:** Atlas uses janus graph database which is configured to use Hbase as backend storage. By default atlas configured to use Hbase tables /atlas_janus/ and /ATLAS_ENTITY_AUDIT_EVENTS./
 /‘Atlas_janus’ table used for storing actual graph data, ATLAS_ENTITY_AUDIT_EVENTS to maintain atlas audit events related to any CRUD operations on atlas entities./
 
-**Step 3.2:**Access Hbase table to verify the mentioned table name exists and accessible for atlas user.  
+**Step 3.2:** Access Hbase table to verify the mentioned table name exists and accessible for atlas user.  
 
 ```
  # kinit -kt ${ATLAS_PROCESS_DIR}/atlas.keytab atlas/ ` hostname -f `
@@ -65,7 +66,7 @@ atlas.audit.hbase.tablename=ATLAS_ENTITY_AUDIT_EVENTS
  # echo 'list' | hbase shell -n | grep -I atlas
 ```
 
-**Step 3.3 :**If table atlas_janus doesn’t exist, verify same using Hbase keytab. Login to any other of the Hbase host to verify the same with Hbase key tab.
+**Step 3.3 :** If table atlas_janus doesn’t exist, verify same using Hbase keytab. Login to any other of the Hbase host to verify the same with Hbase key tab.
 
 ```
  # HBASE_KEYTAB= ` ls -1drt /var/run/cloudera-scm-agent/process/*hbase-REGIONSERVER/hbase.keytab | tail -1 `
@@ -79,7 +80,7 @@ atlas_janus
 
 /Note that Atlas backend DB should already exist as CM will auto create these resources while installing Atlas./
 
-**Step 3.4 :**When kerberos is enabled, authorization is enabled by default on Hbase. Make sure that atlas user has permissions on Hbase tables /atlas_janus/ and /ATLAS_ENTITY_AUDIT_EVENTS/.
+**Step 3.4 :** When kerberos is enabled, authorization is enabled by default on Hbase. Make sure that atlas user has permissions on Hbase tables /atlas_janus/ and /ATLAS_ENTITY_AUDIT_EVENTS/.
 
 First step to verify what class name is set for authorization on Hbase service.
 
@@ -96,7 +97,7 @@ If co-processor is set to /org.apache.hadoop.hbase.security.access.AccessControl
 
 /Note : Class name would org.apache.ranger.authorization.hbase.RangerAuthorizationCoprocessor if Ranger plugin is enabled on Hbase. In which case Ranger policies for Hbase are already configured by CM to allow atlas user access to these tables. Unless any hbase ranger plugin issues, there is no action needed./
 
-**Step 3.5:**Configure permissions on hbase table : 
+**Step 3.5:** Configure permissions on hbase table : 
 
 ```
  # kinit -kt $HBASE_KEYTAB hbase/ ` hostname -f `
@@ -122,7 +123,7 @@ Few common issues related to Hbase that can cause Atlas startup/initialization f
 * Hbase table inconsistencies. Hbase Master UI should give the status of regions.
 * Atlas Hbase access issues ( can be related to Ranger Plugin or permission on hbase tables)
 
-*LAB 1.2* : Kafka configuration for Atlas, Atlas Hook and bridges:** 
+**LAB 1.2: Kafka configuration for Atlas, Atlas Hook and bridges:** 
  
 Kafka is used as notification/messaging system for automated way to populate metadata into Atlas. Prior to reviewing how Kafka is used with Atlas, we will start with Atlas Bridges concept, which are helpful to populate existing metadata in the source prior to Atlas installation.
  
@@ -130,10 +131,10 @@ Kafka is used as notification/messaging system for automated way to populate met
 We will explore other pre-requisite services Solr and Kafka while understanding how metadata is populated to Atlas.
  
  
-*LAB 1.2.1 : Understanding Atlas Hook and Bridges:*
+**LAB 1.2.1 : Understanding Atlas Hook and Bridges:**
 We have two methods to populate metadata to Atlas.
 
-* **Atlas Bridge :** Atlas bridge is a simple class built on AtlasClientV2 class, which does a POST method to ATLAS API with the metadata fetched from service (like for hive we fetch metadata from Hive Metastore ).
+**Atlas Bridge :** Atlas bridge is a simple class built on AtlasClientV2 class, which does a POST method to ATLAS API with the metadata fetched from service (like for hive we fetch metadata from Hive Metastore ).
 With the atlas installation a shell script is provided as add-on per service.
 
 /Code reference [https://github.infra.cloudera.com/CDH/atlas/tree/cdpd-master/addons](https://github.infra.cloudera.com/CDH/atlas/tree/cdpd-master/addons)/
