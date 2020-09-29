@@ -2,13 +2,13 @@
 Purpose of this workshop is to understand Atlas architecture, configuration and features. We will also look into some use cases (Liineage, Ranger Tag policies).
 In this workshop, we will understand the working of Atlas by decoupling each of the dependent service. First part introduces users to Atlas dependent services and how failure/misconfiguration of these services effects function of Atlas. At the end of the first part we will make sure Atlas is functional and summarize the role of each dependent service.
 
-## *Prerequisites for Atlas workshop :**
+## *Prerequisites for Atlas workshop :*
 
 * CDP DC cluster built on Squadron cluster with Data-Operational template.
 * Kerberize cluster using One-click scripts.
 * Update Atlas Configuration to use File Based Authentication (atlas.authentication.method.file).
 
-## *Atlas Architecture for reference :**	
+## *Atlas Architecture for reference :*
 
 We will discuss and understand all the components in this architecture throughout our workshop while reviewing configuration and troubleshooting in some areas.
 
@@ -17,7 +17,7 @@ We will discuss and understand all the components in this architecture throughou
 ## *LAB 1 : Understanding Atlas service pre-requisites, configuration and troubleshooting the setup in squadron*
  
  
-### *LAB 1.1 : Hbase configurations for Atlas service :**
+### *LAB 1.1 : Hbase configurations for Atlas service :*
 
 **Step 1 :**  Once cluster is setup and Kerberize, try accessing Atlas UI and verify if it is up and running after restart. Atlas web UI should give 503 exception. 
 
