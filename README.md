@@ -198,7 +198,7 @@ We will review same operation while using Atlas hive Hook.
 
 **Step 5.1 :** From atlas UI "Search by Type”: hive_table and "Search by text” : atlas_*
 
-**Observations : ** atlas_test_ctas_bridge and atlas_test_table metadata still exists. Import-hive script (or Atlas bridge) will import metadata but won’t act on existing atlas metadata which is already remove/dropped in source .
+** Observations :** atlas_test_ctas_bridge and atlas_test_table metadata still exists. Import-hive script (or Atlas bridge) will import metadata but won’t act on existing atlas metadata which is already remove/dropped in source .
 
 **Misc :** Below are the services and the respective import script paths: 
 
@@ -218,7 +218,7 @@ As we already got Hbase installed, lets execute import-hbase.sh script to popula
 From Atlas UI “Search by Type”: hbase_table and make sure metadata is available for HBase tables.
 Troubleshoot any issues with import-hbase.sh. (Hint: check for Ranger policy).
 
-**Observations:**  For import scripts to work, user executing the script must have access to metadata on the source service and also on Atlas to create new entities.
+** Observations:**  For import scripts to work, user executing the script must have access to metadata on the source service and also on Atlas to create new entities.
 
 * **Atlas Hooks :**  Main feature of Atlas and most of the use cases buillt based on Atlas Lineage feature. With Lineage, Atlas maintains history/changes to metadata. Lineage can be captured during runtime when there is any update to metadata which is possible with Atlas Hooks.
 
