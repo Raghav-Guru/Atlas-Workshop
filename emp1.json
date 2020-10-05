@@ -1,0 +1,14 @@
+{
+    "entity": {
+        "typeName":   "Employee",
+        "attributes": {
+            "qualifiedName": "Thomas",
+            "name":          "Thomas CLDR",
+            "emailAddress":  "Thomas.cldr@EXAMPLE.COM",
+            "createdBy":     "admin",
+	    "createTime":    "2020-10-05T13:15:25.369Z",
+	    "updateTime":    "2020-10-05T13:15:25.369Z",
+	    "updatedBy": "admin"
+        }
+    }
+}
