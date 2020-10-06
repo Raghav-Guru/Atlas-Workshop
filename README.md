@@ -4,7 +4,7 @@ In this workshop, we will understand the working of Atlas by decoupling each of 
 
 ## *Prerequisites for Atlas workshop :*
 
-* CDP DC cluster built on Squadron cluster with Data-Operational template.
+* CDP DC cluster built on Squadron with Data-Operational template.
 * Kerberize cluster using One-click scripts.
 * Update Atlas Configuration to use File Based Authentication (atlas.authentication.method.file).
 
