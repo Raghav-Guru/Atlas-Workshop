@@ -152,7 +152,7 @@ Login to  CM to add Hive on Tez service.
 
 - For Yarn service set nm local-dir to /data/yarn/nm.
 - Make sure to add 3 nodemanager components.
-- For Tez service hive.tez.container.size=1Gb.
+- For Tez service tez.am.resource.memory.mb=1Gb.
 - For Hive on Tez config, set hive.tez.container.size = 1024. 
 
 Once the Hive On Tez service is started, make sure all the Hive session Application are in RUNNING state in Yarn application list. 
