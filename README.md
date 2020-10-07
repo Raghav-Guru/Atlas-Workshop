@@ -71,7 +71,7 @@ atlas.audit.hbase.tablename=ATLAS_ENTITY_AUDIT_EVENTS
 Verify if table exists using Hbase keytab. Login to any other of the Hbase host to use hbase keytab. 
 
 ```
- # HBASE_PROCESS_DIR=$(ls -1drt /var/run/cloudera-scm-agent/process/*hbase-REGIONSERVER | tail -1)
+ # export HBASE_PROCESS_DIR=$(ls -1drt /var/run/cloudera-scm-agent/process/*hbase-REGIONSERVER | tail -1)
  # kinit -kt $HBASE_PROCESS_DIR/hbase.keytab hbase/$(hostname -f)
  # klist
  # echo 'list' | hbase shell -n | grep -i atlas
@@ -84,7 +84,7 @@ atlas_janus
 
 **Step 3.4 :** When kerberos is enabled, authorization is enabled by default on Hbase. Make sure that atlas user has permissions on Hbase tables /atlas_janus/ and /ATLAS_ENTITY_AUDIT_EVENTS/.
 
-First step to verify what class name is set for authorization on Hbase service.
+First step to verify what authorizer class is set for Hbase service.
 
 ```
  # grep -C1 hbase.coprocessor.master.classes $ATLAS_PROCESS_DIR/hbase-conf/hbase-site.xml
@@ -95,19 +95,19 @@ First step to verify what class name is set for authorization on Hbase service.
 <value>org.apache.hadoop.hbase.security.access.AccessController</value>
 ```
 
-If co-processor is set to /org.apache.hadoop.hbase.security.access.AccessController/, the class name for Hbase native authorization, Atlas user should be given access using HBase commands. 
+If co-processor is set to /org.apache.hadoop.hbase.security.access.AccessController/, which is the class name for Hbase native authorization, permissions to an user should be configure  using HBase commands. 
 
 /Note : Class name would org.apache.ranger.authorization.hbase.RangerAuthorizationCoprocessor if Ranger plugin is enabled on Hbase. In which case Ranger policies for Hbase are already configured by CM to allow atlas user access to these tables. Unless any hbase ranger plugin issues, there is no action needed./
 
 **Step 3.5:** Configure permissions on hbase table : 
 
 ```
- # kinit -kt $HBASE_KEYTAB hbase/ ` hostname -f `
+ # kinit -kt $HBASE_PROCESS_DIR/hbase.keytab hbase/$(hostname -f)
  # echo "user_permission 'atlas_janus'" |hbase shell -n
  # echo "user_permission 'ATLAS_ENTITY_AUDIT_EVENTS'" |hbase shell -n
 ```
 
-If permissions are not set for above tables, make sure to grant RWX permissions to atlas user.
+By default CM doesnt set permissions on thse tables to allow atlas user access. Execute below commands to grant RWX permissions to atlas user.
 
 ```
  # echo "grant 'atlas','RWXCA','atlas_janus'" | hbase shell -n
