@@ -35,24 +35,24 @@ Prior to troubleshooting the issue, lets understand the atlas service pre-requis
 Atlas depends on Hbase/HDFS,Kafka,Solr service. Before starting Atlas service , all these services must be up and running with permissions set on resource to allow Atlas user access.
 
 ---
-**Step 3:** As configuring Atlas is already done by CM, we will review hbase related configs and fix some common issue.
+**Step 3:** Review the hbase related configs
 
-Atlas is an application that uses graph database, we use janus graph(titan DB prior to HDP 3.x) database which relies on backend storage like Hbase or Cassandra.
+Atlas is an application that uses janus graph database (titan graph DB prior to HDP 3.x). Janus graph DB relies on backend storage like Hbase or Cassandra.
 Ref: [https://docs.janusgraph.org/](https://docs.janusgraph.org/) 
 
 **Step 3.1 :** Review the atlas configuration to verify if all the configured backend services are available and accessible with atlas service principal. 
 Login to atlas host and verify the configuration.
 
 ```
- # export ATLAS_PROCESS_DIR= ` ls -1dtr /var/run/cloudera-scm-agent/process/*ATLAS_SERVER | tail -1 `
- # egrep 'hbase|storage' $ATLAS_PROCESS_DIR/conf/atlas-application.properties
+# export ATLAS_PROCESS_DIR=$(ls -1dtr /var/run/cloudera-scm-agent/process/*ATLAS_SERVER | tail -1)
+# egrep 'hbase|storage' $ATLAS_PROCESS_DIR/conf/atlas-application.properties
 atlas.audit.hbase.zookeeper.quorum=c416-node4.coelab.cloudera.com,c416-node2.coelab.cloudera.com,c416-node3.coelab.cloudera.com
 atlas.graph.storage.hostname=c416-node4.coelab.cloudera.com,c416-node2.coelab.cloudera.com,c416-node3.coelab.cloudera.com
 atlas.graph.storage.hbase.table=atlas_janus
 atlas.audit.hbase.tablename=ATLAS_ENTITY_AUDIT_EVENTS
 ```
 
-/From the config we see that atlas.graph.storage is using Hbase table with name atlas_janus/
+/As per the above configs, atlas.graph.storage is using Hbase table with name atlas_janus/
  
  
 **Observation:** Atlas uses janus graph database which is configured to use Hbase as backend storage. By default atlas configured to use Hbase tables /atlas_janus/ and /ATLAS_ENTITY_AUDIT_EVENTS./
@@ -61,16 +61,18 @@ atlas.audit.hbase.tablename=ATLAS_ENTITY_AUDIT_EVENTS
 **Step 3.2:** Access Hbase table to verify the mentioned table name exists and accessible for atlas user.  
 
 ```
- # kinit -kt ${ATLAS_PROCESS_DIR}/atlas.keytab atlas/ ` hostname -f `
+ # kinit -kt ${ATLAS_PROCESS_DIR}/atlas.keytab atlas/$(hostname -f)
  # klist
- # echo 'list' | hbase shell -n | grep -I atlas
+ # echo 'list' | hbase shell -n | grep -i atlas
 ```
 
-**Step 3.3 :** If table atlas_janus doesn’t exist, verify same using Hbase keytab. Login to any other of the Hbase host to verify the same with Hbase key tab.
+**Step 3.3 :** If table atlas_janus doesn’t show up in last command output, then issue could be (a) atlas user is not allowed to access the atlas_janus table (b) Table atlas_janus doesnt exist.
+
+Verify if table exists using Hbase keytab. Login to any other of the Hbase host to use hbase keytab. 
 
 ```
- # HBASE_KEYTAB= ` ls -1drt /var/run/cloudera-scm-agent/process/*hbase-REGIONSERVER/hbase.keytab | tail -1 `
- # kinit -kt $HBASE_KEYTAB hbase/ ` hostname -f `
+ # HBASE_PROCESS_DIR=$(ls -1drt /var/run/cloudera-scm-agent/process/*hbase-REGIONSERVER | tail -1)
+ # kinit -kt $HBASE_PROCESS_DIR/hbase.keytab hbase/$(hostname -f)
  # klist
  # echo 'list' | hbase shell -n | grep -i atlas
 ATLAS_ENTITY_AUDIT_EVENTS
