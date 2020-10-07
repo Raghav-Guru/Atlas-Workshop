@@ -220,6 +220,7 @@ We will review same operation result while using Atlas hive hook.
 ```
  # echo hadoop | kinit thomas
  # beeline --silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2"  -e "drop table atlas_test_ctas_bridge;show tables;"
+ # echo hadoop | kinit admin/admin
  # /opt/cloudera/parcels/CDH/lib/atlas/hook-bin/import-hive.sh
 ```
 
