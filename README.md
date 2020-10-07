@@ -127,25 +127,27 @@ Few common issues related to Hbase that can cause Atlas startup/initialization f
 
 ### **LAB 1.2: Kafka configuration for Atlas, Atlas Hook and bridges:** 
  
-Kafka is used as notification/messaging system for automated way to populate metadata into Atlas. Prior to reviewing how Kafka is used with Atlas, we will start with Atlas Bridges concept, which are helpful to populate existing metadata in the source prior to Atlas installation.
+Atlas relies on Kafka as notification/messaging service to automate ingesting metadata into Atlas. Prior to reviewing how Kafka is used with Atlas, we should know the concept of Atlas Hooks and Bridges. 
  
- 
-We will explore other pre-requisite services Solr and Kafka while understanding how metadata is populated to Atlas.
+ We will explore other pre-requisite services Solr and Kafka while understanding how metadata is populated to Atlas.
  
  
 **LAB 1.2.1 : Understanding Atlas Hook and Bridges:**
 
-We have 3 methods to populate metadata to Atlas:
+Metadata to Atlas can be ingested in  3 ways : 
 
-**Atlas Bridge :** Atlas bridge is a simple class built on AtlasClientV2 class, which does a POST method to ATLAS API with the metadata fetched from service (like for hive we fetch metadata from Hive Metastore ).
-With the atlas installation a shell script is provided as add-on per service.
+**Atlas Bridge :** Atlas bridge is a simple class built on AtlasClientV2 class. Provided as a shell script will do a POST method to ATLAS API with the metadata fetched from metadata source service (like for hive we fetch metadata from Hive Metastore ).
+
+Atlas parcel/installation includes these atlas bridge shell scripts per supported service. 
 
 /Code reference [https://github.infra.cloudera.com/CDH/atlas/tree/cdpd-master/addons](https://github.infra.cloudera.com/CDH/atlas/tree/cdpd-master/addons)/
 
 These shell scripts call Atlas bridge code in backend , which further has implementation to fetch metadata from that respective service and push it to ATLAS via Atlas API.
 
-**Step 1 :** Lets install Hive On Tez Service to understand how these Atlas bridge are used.
-Install Hive on Tez service on cluster. (Hive is the very first service where Atlas integration was implemented.)
+**Step 1 :**  Install Hive On Tez Service to understand how these Atlas bridge/import scripts are used.
+
+From CM add Hive on Tez service.
+
 /Note: Hive on Tez depends on service YARN/HIVE/Tez, make sure to add these service in the order prior to adding Hive on Tez./
 
 **Step 2 :** Create table on Hive to create some metadata for hive. Metadata for hive is created when hive objects like table/Db are created.
