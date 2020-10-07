@@ -462,11 +462,11 @@ atlas ATLAS_HOOK 0 19 19 0 consumer-atlas-1-2f978b95-896f-4da7-9dba-02d63b057626
 **Observations** : Dropping any table while Hook enabled, will mark the table as deleted and won’t show up in search (unless selected to show historical entities). 
 
 **Summary of LAB 1 :** 
-* Understanding configurations in Atlas for the dependency services Hbase,Kafka,Solr.
-* Fixed issues faced with initial setup.
-* Atlas Hook and Atlas bridge, difference in how these two methods populate metadata to Atlas.
+* Atlas Configurations for the dependency services Hbase,Kafka,Solr.
+* Fixed issues with initial setup after enabling kerberos.
+* Atlas Hook and Atlas bridge, difference in how these two methods ingest metadata to Atlas.
 * Atlas search feature (Basic and Advanced search)
-* Atlas Lineage and how lineage gets created with the changes in metadata.
+* Atlas Lineage and how lineage represents the changes in metadata.
   
  With the fully functioning Atlas service, in next LAB we will explore more on core concepts of Atlas(Type system, entities, classifications, relationship, Glossary),Authentication/Authorization and one use case of Atlas Tags with dynamic tag based ranger policies.
 
