@@ -142,34 +142,52 @@ Atlas parcel/installation includes these atlas bridge shell scripts per supporte
 
 /Code reference [https://github.infra.cloudera.com/CDH/atlas/tree/cdpd-master/addons](https://github.infra.cloudera.com/CDH/atlas/tree/cdpd-master/addons)/
 
-These shell scripts call Atlas bridge code in backend , which further has implementation to fetch metadata from that respective service and push it to ATLAS via Atlas API.
+These shell scripts call Atlas bridge code in backend, which further has implementation to fetch metadata from that respective service and ingest it to ATLAS via Atlas API.
 
 **Step 1 :**  Install Hive On Tez Service to understand how these Atlas bridge/import scripts are used.
 
-From CM add Hive on Tez service.
+Login to  CM to add Hive on Tez service.
 
 /Note: Hive on Tez depends on service YARN/HIVE/Tez, make sure to add these service in the order prior to adding Hive on Tez./
 
+For Yarn service set nm local-dir to /data/yarn/nm.
+Make sure to add 3 nodemanager components.
+For Tez service hive.tez.container.size=1Gb
+For Hive on Tez config, set hive.tez.container.size = 1024. 
+
+Once the Hive On Tez service is started, make sure all the Hive session Application are in RUNNING state in Yarn application list. 
+
+
 **Step 2 :** Create table on Hive to create some metadata for hive. Metadata for hive is created when hive objects like table/Db are created.
+   **Step 2.1 :** Login to KDC host (usually node1 of the squadron cluster). Create kerberos users to use for authenticating with services.
 
 ```
- # beeline --silent=true -u 'jdbc:hive2://c416-node2.coelab.cloudera.com:10000/default;principal=hive/_HOST@COELAB.CLOUDERA.COM' -e "create table atlas_test_table(col1 string,col2 int);”
- # beeline --silent=true -u 'jdbc:hive2://c416-node2.coelab.cloudera.com:10000/default;principal=hive/_HOST@COELAB.CLOUDERA.COM' -e "describe formatted atlas_test_table”
+# echo -e "hadoop\nhadoop" | kadmin.local -q 'addprinc thomas'
+# echo -e "hadoop\nhadoop" | kadmin.local -q 'addprinc steve'
 ```
 
-Output from describe command is the metadata we should see in Atlas UI once it gets written to Atlas.
+  **Step 2.2 :** Create table atlas_test_table on Hive 
+
+```
+ # echo hadoop | kinit thomas 
+ # beeline --silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "create table atlas_test_table(col1 string,col2 int);"
+ # beeline --silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "describe formatted atlas_test_table"
+```
+
+Output from describe command is the metadata we should see in Atlas UI once it gets ingested to Atlas.
 
 **Step 3.1 :** Use import-hive.sh script to import hive metadata : 
 
 ```
- # kinit -kt $ATLAS_PROCESS_DIR/atlas.keytab atlas/ ` hostname -f `
+ # kinit -kt $ATLAS_PROCESS_DIR/atlas.keytab atlas/$(hostname -f)
  # export JAVA_HOME=/usr/java/jdk1.8.0_232-cloudera/
- # echo ‘hadoop’ | kinit admin/admin
- # /opt/cloudera/parcels/CDH-7.2.0-1.cdh7.2.0.p0.3758356/lib/atlas/hook-bin/import-hive.sh
+ # echo hadoop | kinit admin/admin
+ # /opt/cloudera/parcels/CDH/lib/atlas/hook-bin/import-hive.sh
 Using Hive configuration directory [/etc/hive/conf]
 […]
 Hive Meta Data imported successfully!!!
 ```
+Note that we have use admin user to import metadata to atlas, as atlas authorization is set to allow admin user with RWX privileges. 
 
 **Step 3.2 :** Login to atlas UI and use basic search with "Search by Type”: /hive_table/ and /"Search by text”/: /atlas_*/
 
@@ -182,42 +200,51 @@ Hive Meta Data imported successfully!!!
 **Step 4.1 :** Create another table using CTAS statement using above created table. 
 
 ```
- # beeline --silent=true -u 'jdbc:hive2://c416-node2.coelab.cloudera.com:10000/default;principal=hive/_HOST@COELAB.CLOUDERA.COM' -e "create table atlas_test_ctas_bridge as (select * from atlas_test_table)”
- # beeline --silent=true -u 'jdbc:hive2://c416-node2.coelab.cloudera.com:10000/default;principal=hive/_HOST@COELAB.CLOUDERA.COM' -e "show tables"
- # /opt/cloudera/parcels/CDH-7.2.0-1.cdh7.2.0.p0.3758356/lib/atlas/hook-bin/import-hive.sh
+# echo hadoop | kinit thomas
+# beeline --silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "create table atlas_test_ctas_bridge as (select * from atlas_test_table)"
+# beeline --silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2"  -e "show tables"
+# echo hadoop | kinit admin/admin
+# /opt/cloudera/parcels/CDH/lib/atlas/hook-bin/import-hive.sh
 ```
 
 **Step 4.2 :** From atlas UI "Search by Type”: hive_table and "Search by text” : atlas_*
+
 **Step 4.3 :** Review the Properties, Lineage and Audits for table atlas_test_ctas_bridge in Atlas.
 
 **Observations:** import-hive/Atlas bridge will import the metadata but will not capture the Lineage. Lineage when captured, would show the parent table details for any CTAS operation.
-We will review same operation while using Atlas hive Hook.
+
+We will review same operation result while using Atlas hive hook.
 
 **Step 5:** Drop atlas_test_ctas_bridge table and re-execute import-hive script. 
 
 ```
- # beeline --silent=true -u 'jdbc:hive2://c416-node2.coelab.cloudera.com:10000/default;principal=hive/_HOST@COELAB.CLOUDERA.COM' -e "drop table atlas_test_ctas_bridge;show tables; show tables;”
- # /opt/cloudera/parcels/CDH-7.2.0-1.cdh7.2.0.p0.3758356/lib/atlas/hook-bin/import-hive.sh
+ # echo hadoop | kinit thomas
+ # beeline --silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2"  -e "drop table atlas_test_ctas_bridge;show tables;"
+ # /opt/cloudera/parcels/CDH/lib/atlas/hook-bin/import-hive.sh
 ```
 
 **Step 5.1 :** From atlas UI "Search by Type”: hive_table and "Search by text” : atlas_*
 
-**Observation:** atlas_test_ctas_bridge and atlas_test_table metadata still exists. Import-hive script (or Atlas bridge) will import metadata but won’t act on existing atlas metadata which is already remove/dropped in source .
+**Observation:** atlas_test_ctas_bridge and atlas_test_table metadata still exists. Import-hive script (or Atlas bridge) will import metadata but won’t act on existing atlas metadata which is already remove/dropped in the source .
 
-**Misc :** Below are the services and the respective import script paths: 
+**Misc :** Below are the services and the import script location: 
 
 ```
-/opt/cloudera/parcels/CDH-7.2.0-1.cdh7.2.0.p0.3758356/lib/atlas/hook-bin/import-hbase.sh
-/opt/cloudera/parcels/CDH-7.2.0-1.cdh7.2.0.p0.3758356/lib/atlas/hook-bin/import-hive.sh
-/opt/cloudera/parcels/CDH-7.2.0-1.cdh7.2.0.p0.3758356/lib/atlas/hook-bin/import-kafka.sh
+/opt/cloudera/parcels/CDH/lib/atlas/hook-bin/import-hbase.sh
+/opt/cloudera/parcels/CDH/lib/atlas/hook-bin/import-hive.sh
+/opt/cloudera/parcels/CDH6/lib/atlas/hook-bin/import-kafka.sh
 ```
 
 As we already got Hbase installed, lets execute import-hbase.sh script to populate HBase metadata.
 
 ```
- # kinit -kt $ATLAS_PROCESS_DIR/atlas.keytab atlas/ ` hostname -f `
- # /opt/cloudera/parcels/CDH-7.2.0-1.cdh7.2.0.p0.3758356/lib/atlas/hook-bin/import-hbase.sh
+ #  kinit -kt $HBASE_PROCESS_DIR/hbase.keytab hbase/$(hostname -f)
+ # /opt/cloudera/parcels/CDH/lib/atlas/hook-bin/import-hbase.sh
 ```
+
+Note that we are importing hbase metadata to atlas using the hbase user. It might fail if hbase user doesnt have permissions on Atlas resources. As Atlas authorization is configured to use ranger, for now we add hbase user to all default policies. 
+
+Re-execute the script once hbase user is added in the default cm_atlas policies. 
 
 From Atlas UI “Search by Type”: hbase_table and make sure metadata is available for HBase tables.
 Troubleshoot any issues with import-hbase.sh. (Hint: check for Ranger policy).
@@ -231,32 +258,34 @@ Atlas Hooks as name implies are hooks which are embedded into the service JVM wi
 ![Atlas Hook notification flow](Atlas_hook_Kafka.png)
 
 
-**Step 1:** From CM UI, enable Atlas hook on hive_on_tez service(by selecting Atlas service is configuration), restart the services and verify configurations from HiveServer2: 
+**Step 1:** From CM UI, enable Atlas hook on hive_on_tez service(by selecting Atlas service is configuration),restart the services.
+
 **Step 2:** Login to HiveServer2 to review the configurations for hook to work . 
 
 ```
- # export HIVE_PROCESS_DIR= ` ls -1dtr /var/run/cloudera-scm-agent/process/*hive_on_tez-HIVESERVER2 | tail -1 `
+ # export HIVE_PROCESS_DIR=$(ls -1dtr /var/run/cloudera-scm-agent/process/*hive_on_tez-HIVESERVER2 | tail -1)
  # grep -C1 hive.exec.post.hooks $HIVE_PROCESS_DIR/hive-site.xml
 <property>
 <name>hive.exec.post.hooks</name>
 <value>org.apache.hadoop.hive.ql.hooks.HiveProtoLoggingHook,org.apache.atlas.hive.hook.HiveHook</value>
 ```
 
-**Step 3.1 :** With the hook enabled, class org.apache.atlas.hive.hook.HiveHook will be invoked for every metadata operation. Repeat the table creation exercise to see the difference. 
+**Step 3.1 :** With the hook enabled, class org.apache.atlas.hive.hook.HiveHook will be invoked for every metadata operation. Repeat the table creation exercise and note the difference between hook and bridge. 
 
 ```
- # beeline --silent=true -u 'jdbc:hive2://c416-node2.coelab.cloudera.com:10000/default;principal=hive/_HOST@COELAB.CLOUDERA.COM' -e "create table atlas_hook_table(col1 string,col2 int);show tables;"
+ # echo hadoop | kinit thomas
+ # beeline --silent=true -u  "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "create table atlas_hook_table(col1 string,col2 int);show tables;"
 ```
 
 **Step 3.2:** From atlas UI /"Search by Type”: hive_table/ and /"Search by text” : atlas_*/
 
-**Step 3.3 :**  Metadata might not be available yet on Atlas UI. Review hiveserver2.log and see if any issues related to kafk.
+**Step 3.3 :**  Metadata might not be available yet on Atlas UI. Review hiveserver2.log and see if any issues related to kafka.
 
 ```
-＃grep 'Atlas Notifier' /var/log/hive/hadoop-cmf-hive_on_tez-HIVESERVER2-c416-node2.coelab.cloudera.com.log.out
+＃grep 'Atlas Notifier' /var/log/hive/hadoop-cmf-hive_on_tez-HIVESERVER2-$(hostname -f).log.out
 ```
 
-**Step 4 :** Starting point for Atlas hooks is access to Kafka topic ATLAS_HOOK. Lets review the Kafka configuration, verify kafka health and fix any issues.
+**Step 4 :** Starting point of Atlas hooks is access to Kafka topic ATLAS_HOOK.  Review the Kafka configuration and verify if any issues on kafka broker. 
 
 ```
 ＃less $HIVE_PROCESS_DIR/atlas-application.properties
@@ -285,7 +314,8 @@ CTRL+D
 
 ```
  # export KAFKA_OPTS='-Djava.security.auth.login.config=/var/tmp/kafka_jaas.conf'
- # kafka-topics --list --bootstrap-server c416-node4.coelab.cloudera.com:9092 --command-config /var/tmp/kafka.config
+ # export BOOTSTRAP_SERVER=$(cat $HIVE_PROCESS_DIR/atlas-application.properties | grep bootstrap | awk -F'=' '{print $2}')
+ # kafka-topics --list --bootstrap-server $BOOTSTRAP_SERVER --command-config /var/tmp/kafka.config
 ATLAS_ENTITIES
 ATLAS_HOOK
 ATLAS_SPARK_HOOK
@@ -294,7 +324,7 @@ ATLAS_SPARK_HOOK
 **Step 4.3 :** Make sure kafka topics exits and confirm atlas service is subscribed to ‘atlas’ kafka group ID. 
 
 ```
- # kafka-consumer-groups --list --bootstrap-server c416-node4.coelab.cloudera.com:9092 --command-config /var/tmp/kafka.config
+ # kafka-consumer-groups --list --bootstrap-server  $BOOTSTRAP_SERVER --command-config /var/tmp/kafka.config
 ```
 
 If atlas group ID is not visible, review the kafka broker logs for any issues .
@@ -302,64 +332,76 @@ If atlas group ID is not visible, review the kafka broker logs for any issues .
 **Step 4.4 :** On Kafka host : 
 
 ```
- # tail -f /var/log/kafka/kafka-broker- ` hostname -f ` .log
+ # ssh  $(echo $BOOTSTRAP_SERVER | awk -F':' '{print $1}')
+ # tail -f /var/log/kafka/kafka-broker-$(hostname -f).log
 […]
 2020-09-07 04:24:28,566 ERROR kafka.server.KafkaApis: [KafkaApi-1546332648] Number of alive brokers '1' does not meet the required replication factor '3' for the offsets topic (configured via 'offsets.topic.replication.factor'). This error can be ignored if the cluster is starting up and not all brokers are up yet.
 
 ```
-As error shows, we don’t have enough brokers to match the replication factor. /*Add additional kafka brokers if required (or) change the replication.factor to match number of brokers.*/
+As error shows, we don’t have enough brokers to match the replication factor. /*Fro CM add additional kafka brokers if required (or) change the replication.factor to match number of brokers.*/
 
 **Step 4.5 :** Re-execute the Kafka-groups command to confirm atlas, group id exits. 
 
+Login to Hiveserver2 host to execute below commands. 
+
 ```
- # kafka-consumer-groups --list --bootstrap-server c416-node4.coelab.cloudera.com:9092 --command-config /var/tmp/kafka.config
+ # export HIVE_PROCESS_DIR=$(ls -1dtr /var/run/cloudera-scm-agent/process/*hive_on_tez-HIVESERVER2 | tail -1)
+ # export BOOTSTRAP_SERVER=$(cat $HIVE_PROCESS_DIR/atlas-application.properties | grep bootstrap | awk -F'=' '{print $2}')
+ # kafka-consumer-groups --list --bootstrap-server $BOOTSTRAP_SERVER --command-config /var/tmp/kafka.config
 ```
 
 **Step 4.6:** Review if there is any lag on consumer group ‘atlas’
 
 ```
- # kafka-consumer-groups --describe --group atlas --bootstrap-server c416-node4.coelab.cloudera.com:9092 --command-config /var/tmp/kafka.config
+ # kafka-consumer-groups --describe --group atlas --bootstrap-server $BOOTSTRAP_SERVER --command-config /var/tmp/kafka.config
 […]
 GROUP TOPIC PARTITION CURRENT-OFFSET LOG-END-OFFSET LAG CONSUMER-ID HOST CLIENT-ID
 atlas ATLAS_SPARK_HOOK 0 - 0 - consumer-atlas-2-0807b7d8-99c2-48fc-9534-d77a58c9d511 /172.25.42.68 consumer-atlas-2
 atlas ATLAS_HOOK 0 15 15 0 consumer-atlas-1-2f978b95-896f-4da7-9dba-02d63b057626 /172.25.42.68 consumer-atlas-1
 
 ```
-From the above output we can see CURRENT-OFFSET and LAG, 0 LAG represents that consumer has consumed all the messages. In our case consumer here for ATLAS_HOOK is our Atlas service.
+From the above output we can see CURRENT-OFFSET and LAG. LAG 0 represents that consumer has consumed all the messages. In our case consumer for ATLAS_HOOK is our Atlas service.
 
 **Step 4.7 :** Login to Atlas UI and verify if the tables that were created are available. From atlas UI "Search by Type”: hive_table and "Search by text” : atlas_* 
 
-Observations:  Atlas service subscribes to Kafka topic ATLAS_HOOK, for which Kafka service should be operational. Hive hook will publish any metadata change events during runtime to Kafka topic ATLAS_HOOK.
+** Observations:**  Atlas service subscribes to Kafka topic ATLAS_HOOK, for which Kafka service should be operational. Hive hook will publish any metadata change events during runtime to Kafka topic ATLAS_HOOK.
 
-* **Atlas API :** We will use this method in second part of Lab with a custom type. 
 
-**Task :** Referring to above command, try to see all the notifications published on ATLAS_HOOK topic.
+* **Atlas API :** Third method to ingest metadata to atlas is by directly using Atlas API. This needs some manual handwork to create an entity based on the type of metadata. Some use cases are built based on this Atlas API , where a custom type is defined and metadata of that custom time is ingested by building a custom client code. 
+
+We will try this method of ingesting in the second part of this workshop. 
+
+
+**Task :** Referring to above kafka commands, try to see all the notifications published on ATLAS_HOOK topic.
 
 ### **LAB 1.3 : Atlas Search and Solr configurations :**
  
 In this LAB we will review the configurations related to Basic search, the feature used by external clients for data discovery.
 Atlas provides two options for search *Basic Search* and *Advanced/DSL search*: Basic search is faster as it gets the search results from Solr collections configured for Atlas. 
 
-**Step 1:** From the Atlas service config, review the search related configurations. 
+**Step 1:** Login to Atlas host and review the search related configurations. 
 
 ```
- # cat $ATLAS_PROCESS_DIR/conf/atlas-application.properties | grep atlas.graph.index
+# export ATLAS_PROCESS_DIR=$(ls -1dtr /var/run/cloudera-scm-agent/process/*ATLAS_SERVER | tail -1)
+# cat $ATLAS_PROCESS_DIR/conf/atlas-application.properties | grep atlas.graph.index
 atlas.graph.index.search.solr.mode=cloud
 atlas.graph.index.search.solr.wait-searcher=true
 atlas.graph.index.search.solr.zookeeper-url=c416-node4.coelab.cloudera.com:2181,c416-node2.coelab.cloudera.com:2181,c416-node3.coelab.cloudera.com:2181/solr
 ```
 
-**Step 2:** Janus graph DB by defaults uses the solr collections with name *edge_index,vertex_index,fulltext_index.* Each index has its own purpose for indexing. With Atlas we rely more on vertex_index collection. 
+**Step 2:** Janus graph DB by defaults uses the solr collections with name *edge_index,vertex_index,fulltext_index.* Each index has its own search index. In Atlas we rely more on vertex_index collectio
+n. 
 Review the collections created on solr with above names.
 
 ```
- # solrctl --zk c416-node4.coelab.cloudera.com:2181,c416-node2.coelab.cloudera.com:2181,c416-node3.coelab.cloudera.com:2181/solr --jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf collection --list
+ # export SOLR_ZK_URL=$(cat $ATLAS_PROCESS_DIR/conf/atlas-application.properties | grep atlas.graph.index.search.solr.zookeeper-url | awk -F'=' '{print $2}')
+ # solrctl --zk $SOLR_ZK_URL --jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf collection --list
 vertex_index (5)
 edge_index (5)
 fulltext_index (5)
-＃solrctl --zk c416-node4.coelab.cloudera.com:2181,c416-node2.coelab.cloudera.com:2181,c416-node3.coelab.cloudera.com:2181/solr --jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf cluster --get-clusterstate /tmp/test.out
- # less /tmp/test.out
- # curl --negotiate -u : 'http://c416-node2.coelab.cloudera.com:8983/solr/vertex_index/select?q=%28cn9_t%3A%28hive_table%29%29&wt=json&rows=100' | python -mjson.tool
+＃solrctl --zk $SOLR_ZK_URL --jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf cluster --get-clusterstate /tmp/test.out
+# less /tmp/test.out
+# curl --negotiate -u : 'http://c416-node2.coelab.cloudera.com:8983/solr/vertex_index/select?q=%28cn9_t%3A%28hive_table%29%29&wt=json&rows=100' | python -mjson.tool
 ```
 
 **Step 3:** Equivalent query from frontend atlas to compare the results : 
@@ -375,12 +417,13 @@ From Solr UI select Advanced search and try searching same table “atlas_*” a
 In this LAB we will understand the Atlas Lineage feature and how a lineage is built using Atlas Hooks. After completing above steps, we should have fully functional Atlas and should be able to use the core features of Atlas.
 
 **Step 1:**
-Lineage for metadata is created when there is any change on existing metadata while Hook is enabled.
+Lineage for metadata is created when there is any change on existing metadata when Atlas Hook is enabled.
 
 **Step 1.1 :** Create a new table with CTAS to see this feature. 
 
 ```
- # beeline --silent=true -u 'jdbc:hive2://c416-node2.coelab.cloudera.com:10000/default;principal=hive/_HOST@COELAB.CLOUDERA.COM' -e "create table atlas_hook_table_ctas as (select * from atlas_hook_table);show tables;"
+ # echo hadoop | kinit thomas
+ # beeline --silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "create table atlas_hook_table_ctas as (select * from atlas_hook_table);show tables;"
 ```
 
 **Step 1.2 :** Login to Atlas UI and verify if the tables that were created are available. From atlas UI "Search by Type”: hive_table and "Search by text” : atlas_*. 
@@ -391,15 +434,25 @@ Review properties, Lineage and Audits for table atlas_hook_table_ctas
 **Step 2.1:** Drop the intermediate table to see changes in Lineage and existing metadata.
 
 ```
- # beeline --silent=true -u 'jdbc:hive2://c416-node2.coelab.cloudera.com:10000/default;principal=hive/_HOST@COELAB.CLOUDERA.COM' -e "drop table atlas_hook_table;"
+ # echo hadoop | kinit thomas
+ # beeline --silent=true -u  "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "drop table atlas_hook_table;"
 ```
 
 **Step 2.2:** Recreate the table with same name, and observe the changes to search results and Lineage of /atlas_hook_table_ctas/. 
 
+```
+ # echo hadoop | kinit thomas
+ # beeline --silent=true -u  "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "drop table atlas_hook_table;"
+```
+
 **Step 2.3 :** Review the Kafka lag on atlas kafka group.
 
+Login to Hiveserver2 to execute kafka commands.
+
 ```
- # kafka-consumer-groups --describe --group atlas --bootstrap-server c416-node4.coelab.cloudera.com:9092 --command-config /var/tmp/kafka.config
+ # export HIVE_PROCESS_DIR=$(ls -1dtr /var/run/cloudera-scm-agent/process/*hive_on_tez-HIVESERVER2 | tail -1)
+ # export BOOTSTRAP_SERVER=$(cat $HIVE_PROCESS_DIR/atlas-application.properties | grep bootstrap | awk -F'=' '{print $2}')
+ # kafka-consumer-groups --describe --group atlas --bootstrap-server $BOOTSTRAP_SERVER --command-config /var/tmp/kafka.config
 [...]
 GROUP TOPIC PARTITION CURRENT-OFFSET LOG-END-OFFSET LAG CONSUMER-ID HOST CLIENT-ID
 atlas ATLAS_SPARK_HOOK 0 - 0 - consumer-atlas-2-0807b7d8-99c2-48fc-9534-d77a58c9d511 /172.25.42.68 consumer-atlas-2
