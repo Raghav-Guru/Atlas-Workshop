@@ -68,7 +68,7 @@ atlas.audit.hbase.tablename=ATLAS_ENTITY_AUDIT_EVENTS
 
 **Step 3.3 :** If table atlas_janus doesn’t show up in last command output, then issue could be (a) atlas user is not allowed to access the atlas_janus table (b) Table atlas_janus doesnt exist.
 
-Verify if table exists using Hbase keytab. Login to any other of the Hbase host to use hbase keytab. 
+Verify if table exists using Hbase keytab. Login to any of the Hbase hosts to use hbase keytab. 
 
 ```
  # export HBASE_PROCESS_DIR=$(ls -1drt /var/run/cloudera-scm-agent/process/*hbase-REGIONSERVER | tail -1)
