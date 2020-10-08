@@ -549,7 +549,8 @@ export ATLAS_URL=$(grep atlas.rest.address /etc/hive/conf/atlas-application.prop
 **Observations:**  Base model defines the schema like definitions for the base types defined earlier.  hive_db extends the type Asset which again extends Referenceable type. All the attributes defined for type can be used by the subtypes without redefining it in that type. Think of it as attributes being inherited.    
 
 
-**LAB 2.2 : Creating custom Type :**
+**LAB 2.2 :** Creating custom Type 
+
 **Step 1:** Using the base mode type "Referenceable" , create a new type named Employee  
 
 
@@ -642,12 +643,12 @@ export ATLAS_URL=$(grep atlas.rest.address /etc/hive/conf/atlas-application.prop
 **Step 4:** Classifications in Atlas are like labels with additional capabilities. Atlas also has labels which also does a part of classification purpose. 
 With classification, entities can be associated with a name to classify for better search and data discovery in atlas. And a classification can be associated with attributes to describe the entity.  
     **Step 4.1:** Login to atlas UI and add classification with name SSN, with boolean attribute type name 'active' and string attribute type 'state'.
+    **Step 4.2:** Search for the type Employee, and add SSN tag on this entity with attribute values "active" : false and state: "CA".
+    **Step 4.3:** With the classification added, we can search all the entities are searchable, without browsing throw all the entity results from basic search.                      Now a User interested in looking for all metadata tagged as SSN can get the results from the classifications tab.
 
-    **Step 4.2:** Search for the type Employee, and add SSN tag on this entity with attribute values "active" : false and state: "CA"
+Note that we have options to propagate the classification with Apply Validity period. 'Apply Validity option' can be used to maintain the time sensitive entity classification.
 
-    Note that we have options to propagate the classification with Apply Validity period. 'Apply Validity option' can be used to maintain the time sensitive entity classification. 
-
-    **Step 4.3:** With the classification added, we can search all the entities are searchable, without browsing throw all the entity results from basic search. Now a User interested in looking for all metadata tagged as SSN can get the results from the classifications tab.
+   
 
 **Step 5:** Glossary in atlas in another feature useful for business users, previously called business taxonomy. We can use the Glossary to define meaningful  Terms useful for business users and use category to define hierarchy. From Glossary Add new Category with name "Cloudera Employee" and add term "Machine Learning". 
 
@@ -660,7 +661,7 @@ With classification, entities can be associated with a name to classify for bett
 
 Atlas supports multiple authentication types in fallback mechanism, A user being authenticated will be validated against  Kerberos,AD/LDAP,PAM, File based in that order. It is possible that authentication errors can be logged for each failed authentication method until we try auth agents file based mechanism.  Apart from above auth method, Atlas also support Knox SSO authentication for browser based access.  
 
-*Step 1:* Review the authentication configs for atlas. 
+**Step 1:** Review the authentication configs for atlas. 
 
 ```
 # export ATLAS_PROCESS_DIR=$(ls -1dtr /var/run/cloudera-scm-agent/process/*ATLAS_SERVER | tail -1) 
