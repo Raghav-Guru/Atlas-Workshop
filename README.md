@@ -641,10 +641,15 @@ export ATLAS_URL=$(grep atlas.rest.address /etc/hive/conf/atlas-application.prop
 **Step 3 :** Login to Atlas UI and verify if the entity of type got created. Search by type name "Employee", verify the new entity with name exists. 
 
 **Step 4:** Classifications in Atlas are like labels with additional capabilities. Atlas also has labels which also does a part of classification purpose. 
-With classification, entities can be associated with a name to classify for better search and data discovery in atlas. And a classification can be associated with attributes to describe the entity.  
+With classification, entities can be associated with a name to classify for better search and data discovery in atlas. And a classification can be associated with attributes to describe the entity. 
+
     **Step 4.1:** Login to atlas UI and add classification with name SSN, with boolean attribute type name 'active' and string attribute type 'state'.
+    
     **Step 4.2:** Search for the type Employee, and add SSN tag on this entity with attribute values "active" : false and state: "CA".
-    **Step 4.3:** With the classification added, we can search all the entities are searchable, without browsing throw all the entity results from basic search.                      Now a User interested in looking for all metadata tagged as SSN can get the results from the classifications tab.
+    
+    **Step 4.3:** With the classification added, we can search all the entities are searchable, without browsing throw all the entity results from basic search. 
+    
+    Now a User interested in looking for all metadata tagged as SSN can get the results from the classifications tab.
 
 Note that we have options to propagate the classification with Apply Validity period. 'Apply Validity option' can be used to maintain the time sensitive entity classification.
 
