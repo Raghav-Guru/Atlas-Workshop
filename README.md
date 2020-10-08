@@ -502,7 +502,7 @@ LDAP schema is comparable to the  type system, which has similar concepts of def
 
 
 
-**LAB 2.1 :* * We demonstrate the extensible nature of Atlas type system to create new entity type and ingest data manually in that format to Atlas.  
+**LAB 2.1 :** We demonstrate the extensible nature of Atlas type system to create new entity type and ingest data manually in that format to Atlas.  
 
 **Step 1 :** Review the base/models under path /opt/cloudera/parcels/CDH/lib/atlas/models 
 
