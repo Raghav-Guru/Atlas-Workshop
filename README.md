@@ -485,7 +485,7 @@ Atlas base model has below below pre-defined base types. 
 
 * **Referenceable**  : This type represents all entities that can be searched for using a unique attribute called qualifiedName. Most of the Entities in atlas are represented with qualifiedName. Type on those entities extend the 'Referenceable'
 
-* **Asset ** : This type extends Referenceable and adds attributes like name, description and owner. Name is a required attribute (isOptional=false), the others are optional.
+* **Asset** : This type extends Referenceable and adds attributes like name, description and owner. Name is a required attribute (isOptional=false), the others are optional.
 
 * **Infrastructure** : This type extends Asset and typically can be used to be a common super type for infrastructural metadata objects like clusters, hosts etc.
 
@@ -493,7 +493,7 @@ Atlas base model has below below pre-defined base types. 
 
 * **Process** : This type extends Asset. Conceptually, it can be used to represent any data transformation operation. For example, an ETL process that transforms a hive table with raw data to another hive table that stores some aggregate can be a specific type that extends the Process type. A Process type has two specific attributes, inputs and outputs. Both inputs and outputs are arrays of DataSet entities. Thus an instance of a Process type can use these inputs and outputs to capture how the lineage of a DataSet evolves.
 
- !Atlas Base Model [Atlas Base Model](Atlas_Base_.png)
+ !Atlas Base Model [Atlas Base Model](Atlas_base_Model)
 
 **Entity** :
 Entities in Atlas are the instances of particular type, these represent actual metadata created following the 'type' definition.
