@@ -473,3 +473,406 @@ atlas ATLAS_HOOK 0 19 19 0 consumer-atlas-1-2f978b95-896f-4da7-9dba-02d63b057626
 
  
  
+ ## *LAB 2 :*  Atlas Type system ,  security and ranger tag based policies
+
+This part of lab will introduce you to the core concepts of Atlas and other features. We will also try to implement the atlas use case with Ranger tag based policies. 
+
+Atlas Type system at its core, is extensible and has the feature to add custom types to ingest user built metadata.  
+
+**Type :** Type in atlas is the definition of how metadata being ingested is represent in atlas DB. Atlas has pre-defined base type which can be used further to add more type to represent metadata as required.  
+
+Atlas base model has below below pre-defined base types. 
+
+* **Referenceable**  : This type represents all entities that can be searched for using a unique attribute called qualifiedName. Most of the Entities in atlas are represented with qualifiedName. Type on those entities extend the 'Referenceable'
+
+* **Asset ** : This type extends Referenceable and adds attributes like name, description and owner. Name is a required attribute (isOptional=false), the others are optional.
+
+* **Infrastructure** : This type extends Asset and typically can be used to be a common super type for infrastructural metadata objects like clusters, hosts etc.
+
+* **DataSet** : This type extends Referenceable. Conceptually, it can be used to represent an type that stores data. In Atlas, hive tables, hbase_tables etc are all types that extend from DataSet. Types that extend DataSet can be expected to have a Schema in the sense that they would have an attribute that defines attributes of that dataset. For e.g. the columns attribute in a hive_table. Also entities of types that extend DataSet participate in data transformation and this transformation can be captured by Atlas via lineage (or provenance) graphs.
+
+* **Process** : This type extends Asset. Conceptually, it can be used to represent any data transformation operation. For example, an ETL process that transforms a hive table with raw data to another hive table that stores some aggregate can be a specific type that extends the Process type. A Process type has two specific attributes, inputs and outputs. Both inputs and outputs are arrays of DataSet entities. Thus an instance of a Process type can use these inputs and outputs to capture how the lineage of a DataSet evolves.
+
+ !Atlas Base Model [Atlas Base Model](Atlas_Base_.png)
+
+**Entity** :
+Entities in Atlas are the instances of particular type, these represent actual metadata created following the 'type' definition.
+
+LDAP schema is comparable to the  type system, which has similar concepts of defining data based on pre-defined/extended ldap schema.
+
+
+
+**LAB 2.1 :* * We demonstrate the extensible nature of Atlas type system to create new entity type and ingest data manually in that format to Atlas.  
+
+**Step 1 :** Review the base/models under path /opt/cloudera/parcels/CDH/lib/atlas/models 
+
+```
+# ls -l /opt/cloudera/parcels/CDH/lib/atlas/models 
+```
+
+Atlas core types defined in base model  '/opt/cloudera/parcels/CDH/lib/atlas/models/0000-Area0/0010-base_model.json' 
+
+```
+# less /opt/cloudera/parcels/CDH/lib/atlas/models/0000-Area0/0010-base_model.json
+[..] 
+"entityDefs": [ 
+    { 
+      "name": "Referenceable", 
+      "superTypes": [], 
+      "serviceType": "atlas_core", 
+      "typeVersion": "1.0", 
+      "attributeDefs": [ 
+        { 
+          "name": "qualifiedName", 
+          "typeName": "string", 
+          "cardinality": "SINGLE", 
+          "isIndexable": true, 
+          "isOptional": false, 
+          "isUnique": true 
+        } 
+[..] 
+```
+
+
+***Step 2:*** Review the pre-defined extend type hive_db to see how base model is used to create a new type. Login to any hive server2 gateway hosts.  
+
+```
+export ATLAS_URL=$(grep atlas.rest.address /etc/hive/conf/atlas-application.properties | awk -F'=' '{print $2}')api/atlas/v2 
+
+# curl -s -u admin:'hadoop12345!' -X GET -H 'Content-Type: application/json' -H 'Accept: application/json' "${ATLAS_URL}/types/entitydef/name/Asset" | python -mjson.tool 
+
+# curl -s -u admin:'hadoop12345!' -X GET -H 'Content-Type: application/json' -H 'Accept: application/json' "${ATLAS_URL}/types/entitydef/name/hive_db" | python -mjson.tool 
+
+```
+
+
+**Observations:**  Base model defines the schema like definitions for the base types defined earlier.  hive_db extends the type Asset which again extends Referenceable type. All the attributes defined for type can be used by the subtypes without redefining it in that type. Think of it as attributes being inherited.    
+
+
+**LAB 2.2 : Creating custom Type :**
+**Step 1:** Using the base mode type "Referenceable" , create a new type named Employee  
+
+
+```
+# wget https://raw.githubusercontent.com/Raghav-Guru/Atlas-Workshop/master/emp_def.json -O /var/tmp/emp_def.json 
+
+# curl -u admin:'hadoop12345!' -X POST -H 'Content-Type: application/json' -H 'Accept: application/json' "${ATLAS_URL}/types/typedefs" -d @/var/tmp/emp_def.json 
+
+# vi /var/tmp/emp_def.json 
+{ 
+"entityDefs": [ 
+        { 
+            "name":          "Employee", 
+            "category":      "ENTITY", 
+            "superTypes":    [ "Referenceable" ], 
+            "attributeDefs": [ 
+                { 
+                    "name":        "name", 
+                    "typeName":    "string", 
+                    "cardinality": "SINGLE", 
+                    "isIndexable": false, 
+                    "isOptional":  false, 
+                    "isUnique":    false 
+                }, 
+                { 
+                    "name":        "createTime", 
+                    "typeName":    "date", 
+                    "cardinality": "SINGLE", 
+                    "isIndexable": true, 
+                    "isOptional":  false, 
+                    "isUnique":    false 
+                }, 
+                { 
+                    "name":        "createdBy", 
+                    "typeName":    "string", 
+                    "cardinality": "SINGLE", 
+                    "isIndexable": false, 
+                    "isOptional":  false, 
+                    "isUnique":    false 
+                }, 
+                { 
+                    "name":        "updateTime", 
+                    "typeName":    "date", 
+                    "cardinality": "SINGLE", 
+                    "isIndexable": true, 
+                    "isOptional":  false, 
+                    "isUnique":    false 
+                }, 
+                { 
+                    "name":         "updatedBy", 
+                    "typeName":     "string", 
+                    "cardinality": "SINGLE", 
+                    "isIndexable": false, 
+                    "isOptional":  false, 
+                    "isUnique":    false 
+                } 
+            ] 
+        } 
+    ] 
+} 
+```
+
+
+
+**Step 2:** Create Entity of custom type : 
+```
+# wget https://raw.githubusercontent.com/Raghav-Guru/Atlas-Workshop/master/emp1.json -O /var/tmp/emp1.json 
+
+# cat /var/tmp/emp1.json 
+{ 
+    "entity": { 
+        "typeName":   "Employee", 
+        "attributes": { 
+            "qualifiedName": "Thomas", 
+            "name":          "Thomas CLDR", 
+            "emailAddress":  "Thomas.cldr@EXAMPLE.COM", 
+            "createdBy":     "admin", 
+            "createTime":    "2020-10-05T13:15:25.369Z", 
+            "updateTime":    "2020-10-05T13:15:25.369Z", 
+            "updatedBy": "admin" 
+        } 
+    } 
+} 
+
+# curl -X POST -u admin:'hadoop12345!' -H "Accept: application/json" -H "Content-Type: application/json" "${ATLAS_URL}/entity" -d @/var/tmp/emp1.json
+```
+
+**Step 3 :** Login to Atlas UI and verify if the entity of type got created. Search by type name "Employee", verify the new entity with name exists. 
+
+**Step 4:** Classifications in Atlas are like labels with additional capabilities. Atlas also has labels which also does a part of classification purpose. 
+With classification, entities can be associated with a name to classify for better search and data discovery in atlas. And a classification can be associated with attributes to describe the entity.  
+    **Step 4.1:** Login to atlas UI and add classification with name SSN, with boolean attribute type name 'active' and string attribute type 'state'.
+
+    **Step 4.2:** Search for the type Employee, and add SSN tag on this entity with attribute values "active" : false and state: "CA"
+
+    Note that we have options to propagate the classification with Apply Validity period. 'Apply Validity option' can be used to maintain the time sensitive entity classification. 
+
+    **Step 4.3:** With the classification added, we can search all the entities are searchable, without browsing throw all the entity results from basic search. Now a User interested in looking for all metadata tagged as SSN can get the results from the classifications tab.
+
+**Step 5:** Glossary in atlas in another feature useful for business users, previously called business taxonomy. We can use the Glossary to define meaningful  Terms useful for business users and use category to define hierarchy. From Glossary Add new Category with name "Cloudera Employee" and add term "Machine Learning". 
+
+**Step 5.1 :** From the search add the entity of type "Employee" with the term "Machine Learning". Now this entity is readily available from Glossary search. This feature is useful for any business user who wants to categorize the metadata based on popular jargons or useful business terms.  
+
+**Observations :** We know the atlas core features helpful for data discover for any user interest, a business user who is more into identifying metadata based on some technical terms, a data analyst who wants to find metadata based on classifications and attributes values.  
+
+
+**LAB 2.2 :  Authentication in Atlas  :**
+
+Atlas supports multiple authentication types in fallback mechanism, A user being authenticated will be validated against  Kerberos,AD/LDAP,PAM, File based in that order. It is possible that authentication errors can be logged for each failed authentication method until we try auth agents file based mechanism.  Apart from above auth method, Atlas also support Knox SSO authentication for browser based access.  
+
+*Step 1:* Review the authentication configs for atlas. 
+
+```
+# export ATLAS_PROCESS_DIR=$(ls -1dtr /var/run/cloudera-scm-agent/process/*ATLAS_SERVER | tail -1) 
+# grep atlas.authentication ${ATLAS_PROCESS_DIR}/conf/atlas-application.properties 
+```
+
+**Step 2:** By default only admin and rangertagsync users are added in File based authentication method, if required to use file based auth, property 'atlas.authentication.method.file.filename' can be configured with a static file created with entries based on below command output. 
+
+```
+# grep atlas.authentication.method.file.filename ${ATLAS_PROCESS_DIR}/conf/atlas-application.properties | awk -F'=' '{print $2}' | xargs cat 
+# /opt/cloudera/parcels/CDH/lib/atlas/bin/cputil.py -g -u steve -p hadoop12345! -s 
+```
+
+**Step 3:** Enable LDAP Authentication:
+From CM Atlas configuration,  configure below atlas properties with values: 
+
+```
+atlas.authentication.method.ldap 
+atlas.authentication.method.ldap.type : AD 
+atlas.authentication.method.ldap.ad.domain : SUPPORT.COM 
+atlas.authentication.method.ldap.ad.url : ldap://sme-2012-ad.support.com 
+atlas.authentication.method.ldap.ad.bind.dn : test1@SUPPORT.COM 
+atlas.authentication.method.ldap.ad.bind.password: hadoop12345! 
+atlas.authentication.method.ldap.ad.base.dn: OU=users,OU=hortonworks,DC=SUPPORT,DC=COM 
+```
+
+**Step 4:** Restart Atlas and login to Atlas UI with LDAP username:'Thomas' Password: hadoop12345! 
+
+**Step 5:** Kerberos Authentication: 
+
+```
+# export ATLAS_API=$(grep rest ${ATLAS_PROCESS_DIR}/conf/atlas-application.properties | awk -F'=' '{print $2}')/api/atlas 
+# echo hadoop | kinit thomas 
+# curl -s —negotiate -u : $ATLAS_API/admin/session?userName | python -c 'import sys,json;data=json.loads(sys.stdin.read()); print data["userName"]' 
+```
+
+**LAB 2.3 : Atlas Ranger Authorization :**
+By default Ranger authorization is enabled on Atlas service. Atlas also supports file based authorization and has permissions/roles  configured by default for admin,rangertagsync user. 
+
+**Step 1:** Review the simple auth policy file on Atlas host :
+
+```
+# export ATLAS_PROCESS_DIR=$(ls -1dtr /var/run/cloudera-scm-agent/process/*ATLAS_SERVER | tail -1) 
+# cat ${ATLAS_PROCESS_DIR}/conf/atlas-simple-authz-policy.json 
+```
+
+**Step 2:** Login to ranger admin UI, to review the atlas policies configured. Any service to implement authorization should define Resources/service API end points. Below are the resources for Atlas over which policies are defined.  Resource types include 'Entity type', 'Entity Classification','Entity ID','Entity business metadata', Relationship-type , Atlas service(import/export) etc., 
+
+**Step 2.1 :** From Ranger admin UI >Settings>User,groups and roles > Add a user with name Thomas.  
+**Step 2.2 :** Fix ranger_audits issues as audit is required to validate ranger policies.
+
+```
+# echo hadoop | kinit thomas 
+# export SOLR_ZK_URL=$(cat $ATLAS_PROCESS_DIR/conf/atlas-application.properties | grep atlas.graph.index.search.solr.zookeeper-url | awk -F'=' '{print $2}') 
+# solrctl —zk $SOLR_ZK_URL —jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf collection —list 
+# solrctl —zk $SOLR_ZK_URL —jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf config —delete ranger_audits 
+```
+
+
+  **Step 2.3 :** Restart Ranger admin  and verify ranger_audits collection is created and confirm audit is accessible from Ranger UI. 
+
+```
+# solrctl —zk $SOLR_ZK_URL —jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf collection —list 
+```
+
+**Step 3. :** Login to Atlas with AD username 'Thomas' (password : hadoop12345!), search for Employee entity type and try removing classification on the entity. Review the ranger audits for atlas service to confirm denied access for 'Thomas' username. 
+
+**Step 4:** Create a new policy to allow user Thomas to delete classification permission. 
+
+Ranger admin UI > cm_atlas > Add new policy
+Policy Name : Atlas Workshop
+Entity-type : Employee 
+Entity Classification: SSN
+Entity ID : * 
+
+Allow Conditions : Add/Update/Delete Classification for Thomas user.  
+
+**Step 5:** From Atlas UI, login with Thomas AD account and try to remove classification from Employee type entity. Review the Ranger audits to confirm policy created in step 4 is enforced.
+
+
+
+**LAB 2.4 : Ranger Tag based policies and Atlas :**
+One of the user case of Atlas is with Ranger tag based policies, which are helpful to enforce authorization based on tagged resources in Atlas. Ranger would need the classification and resources tagged with that classification in its database to be able to create tag based policy. Tag based policies tags precendee over Resource based policies.  Ranger has Ranger tagsync component toautomate syncing tags and resource information from atlas.
+
+**Step 1:**
+
+```
+# echo hadoop | kinit Thomas 
+# beeline —silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "create table atlas_ranger_test(col1 string,col2 int);" 
+```
+
+**Step 2:** Login to Atlas and make sure new table atlas_ranger_test is synced. And create a new classification RANGER_TEST(attributes : isenable/false)  to use for our test with tag based policies. Associate table atlas_ranger_test with RANGER_TEST tag.
+
+**Step 3:** Atlas has a kafka producer thread that publishes resource and tags information when any resource is tagged in Atlas. We use the topic ATLAS_ENTITES for this purpose;  
+Ranger tagsync subscribed to the ATLAS_ENTITIES topic would consume these notification and sync it to Ranger via ranger import tags API.  
+
+Review the kafka group ranger_entities to observer the LAG details. Login to Ranger tagsync host to execute below commands.  
+
+```
+# export TAGSYNC_PROCESS_DIR=$(ls -1dtr /var/run/cloudera-scm-agent/process/*RANGER_TAGSYNC | tail -1) 
+# echo 'security.protocol=SASL_PLAINTEXT' > /var/tmp/kafka.config 
+# cat > /var/tmp/kafka_jaas.conf 
+KafkaClient { 
+com.sun.security.auth.module.Krb5LoginModule required 
+useTicketCache=true 
+renewTicket=true 
+serviceName="kafka"; 
+}; 
+
+CTRL+D
+
+# export KAFKA_OPTS='-Djava.security.auth.login.config=/var/tmp/kafka_jaas.conf' 
+# export BOOTSTRAP_SERVER=$(cat $TAGSYNC_PROCESS_DIR/conf/atlas-application.properties | grep bootstrap | awk -F'=' '{print $2}') 
+# kafka-topics —list —bootstrap-server $BOOTSTRAP_SERVER —command-config /var/tmp/kafka.config 
+# kafka-consumer-groups —list —bootstrap-server $BOOTSTRAP_SERVER —command-config /var/tmp/kafka.config 
+kafka-consumer-groups —describe —group ranger_entities_consumer —bootstrap-server $BOOTSTRAP_SERVER —command-config /var/tmp/kafka.config 
+```
+
+
+**Step 4:**
+
+Use below API to confirm RANGER_TEST tag is synced to ranger DB with the tagged resource.
+
+
+```
+# curl -u admin:'hadoop12345!' 'http://c416-node4.coelab.cloudera.com:6080/service/tags/tags' -s | python -mjson.tool | grep type 
+# curl -u admin:'hadoop12345!' http://c416-node4.coelab.cloudera.com:6080/service/tags/resources -s | python -mjson.tool 
+# curl -u admin:'hadoop12345!' http://c416-node4.coelab.cloudera.com:6080/service/tags/tagresourcemaps -s | python -mjson.tool 
+```
+
+
+Above 3 ranger API show the details of resource mapped and tags synced by ranger tagsync.  
+
+API for tags corresponds to tagId and resources API for resourceID values in the resourcemaps API. If the sync is successful, id of RANGER_TEST should b mapped to id of atlas_ranger_test table resource.  
+
+
+**Step 5:** Login to Ranger admin to create a new tag based policy to use the tag RANGER_TEST tag.  
+Ranger Admin UI > Access Manager > Tag based policies > cm_tag (Add new policy)  
+
+Policy Name : Ranger atlas test 
+Tag : RANGER_TEST 
+Allow Conditions :  
+Select User : Thomas
+Component Permissions : hive (select all)
+
+**Step 6:** Enable Ranger authorization on hive to use the policies. From CM UI > Hive on Tez > Select Ranger as dependency service followed by service restart.  
+
+Login to any hive client to execute below commands to verify access :  
+
+```
+# echo hadoop | kinit thomas 
+Password for thomas@COELAB.CLOUDERA.COM: 
+# beeline —silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "select * from atlas_ranger_test;" 
+```
+
+**Step 7 :** On Ranger Admin UI verify the audit to confirm tag based policy is enforced. (Note the tag name in the audit entry, which gives the info about which tag that resource is associated with ) 
+
+
+**Step 8 :** Dynamic tag based policies based on atlas tag attributes.  
+
+Atlas tags can be associated with tag attributes which can be used in Ranger policy conditions to dynamically enforce the policies.
+
+**Step 8.1:** Login to Atlas admin UI and update the tag to have attribute value 'isenable = false' 
+**Step 8.2 :** Login to Ranger admin UI and edit tag based policy to include policy condition as below :
+```
+if ( tagAttr.get('isenabled').equals('true')) { 
+ctx.result = true; 
+} 
+```
+
+**Step 8.3 :** Confirm if the table is still accessible Thomas user  
+
+```
+# echo hadoop | kinit thomas 
+# beeline —silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "select * from atlas_ranger_test;" 
+[…]
+Error: Error while compiling statement: FAILED: HiveAccessControlException Permission denied: user [Thomas] does not have [SELECT] privilege on [default/atlas_ranger_test/*] (state=42000,code=40000) 
+```
+
+Here as we have attribute isenable set to false and our condition mentioned is return true if attribute isenable value is true.  
+
+**Step 8.4:** Change the attribute value on atlas tag RANGER_TEST  to true and verify the behavior and verify the attribute value change using below API.  
+
+```
+# curl -u admin:'hadoop12345!' 'http://c416-node4.coelab.cloudera.com:6080/service/tags/tags' -s | python -mjson.tool 
+```
+
+**Step 8.5 :** Access the table again with same user and confirm it is accessible now :
+
+```
+# beeline —silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "select * from atlas_ranger_test;" 
+[..]
++————————————+————————————+ 
+| atlas_ranger_test.col1  | atlas_ranger_test.col2  | 
++————————————+————————————+ 
++————————————+————————————+ 
+```
+
+
+
+**Step 9 :** Atlas has tag propagation feature, when enabled on a classification will tag all resource that are child resource of the tagged.  
+
+**Step 9.1 :** Create table with CTAS to test the tag propagation. 
+
+```
+# echo hadoop | kinit admin/admin 
+#beeline --silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "create table atlas_ranger_test_ctas as (select * from atlas_ranger_test);" 
+```
+
+**Step 9.2 :** Login to Atlas to confirm table atlas_ranger_test_ctas is associated with RANGER_TEST tag. Search Type : hive_table, Search by Text : atlas_ranger_* 
+
+**Observations** : Atlas tag attributes can be used to dynamically control the access to tagged resources. This feature allows us to do more granular ACL on resources, for example, like a column can be tagged with a boolean attribute PII set to true. And use the policy condition to allow user/group to access the column only if PII=true.
+
+
+ 
