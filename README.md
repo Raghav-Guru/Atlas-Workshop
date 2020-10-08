@@ -647,7 +647,8 @@ With classification, entities can be associated with a name to classify for bett
     
     **Step 4.2:** Search for the type Employee, and add SSN tag on this entity with attribute values "active" : false and state: "CA".
     
-    **Step 4.3:** With the classification added, we can search all the entities are searchable, without browsing throw all the entity results from basic search. 
+    **Step 4.3:** With the classification added, we can search all the entities are searchable, without browsing throw all the entity results from basic search.
+
     
     Now a User interested in looking for all metadata tagged as SSN can get the results from the classifications tab.
 
