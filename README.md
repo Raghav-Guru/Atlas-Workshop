@@ -722,15 +722,15 @@ By default Ranger authorization is enabled on Atlas service. Atlas also support
 ```
 # echo hadoop | kinit thomas 
 # export SOLR_ZK_URL=$(cat $ATLAS_PROCESS_DIR/conf/atlas-application.properties | grep atlas.graph.index.search.solr.zookeeper-url | awk -F'=' '{print $2}') 
-# solrctl —zk $SOLR_ZK_URL —jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf collection —list 
-# solrctl —zk $SOLR_ZK_URL —jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf config —delete ranger_audits 
+# solrctl -—zk $SOLR_ZK_URL —jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf collection -—list 
+# solrctl -—zk $SOLR_ZK_URL —jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf config -—delete ranger_audits 
 ```
 
 
   **Step 2.3 :** Restart Ranger admin  and verify ranger_audits collection is created and confirm audit is accessible from Ranger UI. 
 
 ```
-# solrctl —zk $SOLR_ZK_URL —jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf collection —list 
+# solrctl -—zk $SOLR_ZK_URL —jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf collection -—list 
 ```
 
 **Step 3. :** Login to Atlas with AD username 'Thomas' (password : hadoop12345!), search for Employee entity type and try removing classification on the entity. Review the ranger audits for atlas service to confirm denied access for 'Thomas' username. 
