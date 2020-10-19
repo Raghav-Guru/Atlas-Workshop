@@ -701,7 +701,7 @@ atlas.authentication.method.ldap.ad.base.dn: OU=users,OU=hortonworks,DC=SUPPORT,
 ```
 # export ATLAS_API=$(grep rest ${ATLAS_PROCESS_DIR}/conf/atlas-application.properties | awk -F'=' '{print $2}')/api/atlas 
 # echo hadoop | kinit thomas 
-# curl -s —negotiate -u : $ATLAS_API/admin/session?userName | python -c 'import sys,json;data=json.loads(sys.stdin.read()); print data["userName"]' 
+# curl -s -negotiate -u : $ATLAS_API/admin/session?userName | python -c 'import sys,json;data=json.loads(sys.stdin.read()); print data["userName"]' 
 ```
 
 **LAB 2.3 : Atlas Ranger Authorization :**
@@ -722,15 +722,15 @@ By default Ranger authorization is enabled on Atlas service. Atlas also support
 ```
 # echo hadoop | kinit thomas 
 # export SOLR_ZK_URL=$(cat $ATLAS_PROCESS_DIR/conf/atlas-application.properties | grep atlas.graph.index.search.solr.zookeeper-url | awk -F'=' '{print $2}') 
-# solrctl -—zk $SOLR_ZK_URL —jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf collection -—list 
-# solrctl -—zk $SOLR_ZK_URL —jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf config -—delete ranger_audits 
+# solrctl --zk $SOLR_ZK_URL --jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf collection --list 
+# solrctl --zk $SOLR_ZK_URL --jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf config --delete ranger_audits 
 ```
 
 
   **Step 2.3 :** Restart Ranger admin  and verify ranger_audits collection is created and confirm audit is accessible from Ranger UI. 
 
 ```
-# solrctl -—zk $SOLR_ZK_URL —jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf collection -—list 
+# solrctl --zk $SOLR_ZK_URL --jaas $ATLAS_PROCESS_DIR/conf/atlas_jaas.conf collection --list 
 ```
 
 **Step 3. :** Login to Atlas with AD username 'Thomas' (password : hadoop12345!), search for Employee entity type and try removing classification on the entity. Review the ranger audits for atlas service to confirm denied access for 'Thomas' username. 
@@ -756,7 +756,7 @@ One of the user case of Atlas is with Ranger tag based policies, which are helpf
 
 ```
 # echo hadoop | kinit Thomas 
-# beeline —silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "create table atlas_ranger_test(col1 string,col2 int);" 
+# beeline --silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "create table atlas_ranger_test(col1 string,col2 int);" 
 ```
 
 **Step 2:** Login to Atlas and make sure new table atlas_ranger_test is synced. And create a new classification RANGER_TEST(attributes : isenable/false)  to use for our test with tag based policies. Associate table atlas_ranger_test with RANGER_TEST tag.
@@ -820,7 +820,7 @@ Login to any hive client to execute below commands to verify access : 
 ```
 # echo hadoop | kinit thomas 
 Password for thomas@COELAB.CLOUDERA.COM: 
-# beeline —silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "select * from atlas_ranger_test;" 
+# beeline --silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "select * from atlas_ranger_test;" 
 ```
 
 **Step 7 :** On Ranger Admin UI verify the audit to confirm tag based policy is enforced. (Note the tag name in the audit entry, which gives the info about which tag that resource is associated with ) 
@@ -842,7 +842,7 @@ ctx.result = true;
 
 ```
 # echo hadoop | kinit thomas 
-# beeline —silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "select * from atlas_ranger_test;" 
+# beeline --silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "select * from atlas_ranger_test;" 
 […]
 Error: Error while compiling statement: FAILED: HiveAccessControlException Permission denied: user [Thomas] does not have [SELECT] privilege on [default/atlas_ranger_test/*] (state=42000,code=40000) 
 ```
@@ -858,7 +858,7 @@ Here as we have attribute isenable set to false and our condition mentioned is r
 **Step 8.5 :** Access the table again with same user and confirm it is accessible now :
 
 ```
-# beeline —silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "select * from atlas_ranger_test;" 
+# beeline --silent=true -u "jdbc:hive2://$(hostname -f):2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2" -e "select * from atlas_ranger_test;" 
 [..]
 +————————————+————————————+ 
 | atlas_ranger_test.col1  | atlas_ranger_test.col2  | 
